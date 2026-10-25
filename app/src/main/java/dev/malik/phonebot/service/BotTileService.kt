@@ -5,6 +5,7 @@ import android.content.Context
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import dev.malik.phonebot.app
+import dev.malik.phonebot.engine.Scheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -23,6 +24,7 @@ class BotTileService : TileService() {
         scope.launch {
             val on = !app.settings.current().tiktokEnabled
             app.settings.setTiktokEnabled(on)
+            Scheduler.sync(this@BotTileService)
             render(on)
         }
     }

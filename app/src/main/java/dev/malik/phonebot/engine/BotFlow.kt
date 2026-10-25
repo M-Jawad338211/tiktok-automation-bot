@@ -1,41 +1,24 @@
 package dev.malik.phonebot.engine
 
-import android.app.Notification
-import android.app.PendingIntent
-import android.service.notification.StatusBarNotification
-import dev.malik.phonebot.config.BotConfig
-
-/** The parts of a posted notification that flows match on. */
-data class NotificationEvent(
-    val key: String,
-    val packageName: String,
-    val postTime: Long,
-    val title: String,
-    val text: String,
-    val isGroupSummary: Boolean,
-    val contentIntent: PendingIntent?,
-) {
-    companion object {
-        fun from(sbn: StatusBarNotification): NotificationEvent {
-            val n = sbn.notification
-            return NotificationEvent(
-                key = sbn.key,
-                packageName = sbn.packageName,
-                postTime = sbn.postTime,
-                title = n.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty(),
-                text = n.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty(),
-                isGroupSummary = n.flags and Notification.FLAG_GROUP_SUMMARY != 0,
-                contentIntent = n.contentIntent,
-            )
-        }
-    }
-}
+import dev.malik.phonebot.data.RunOutcome
 
 /**
- * NFR-8: a flow is a trigger matcher plus (from milestone 3) its state machine.
- * Adding WhatsApp or Discord later means a new class registered in [Engine.flows], not an engine change.
+ * NFR-8: a flow is one automation the engine can run. Adding WhatsApp or Discord later means a
+ * new class registered in [Engine.flows], not an engine change.
  */
 interface BotFlow {
     val id: String
-    fun matches(event: NotificationEvent, config: BotConfig): Boolean
+
+    /** Walks the target app; ends by returning a result or calling [FlowRun.fail]. */
+    suspend fun run(run: FlowRun): FlowResult
 }
+
+data class FlowResult(
+    val outcome: RunOutcome,
+    val reason: String? = null,
+    /** For SUCCESS: when the posted item arrived, so later checks skip it. */
+    val itemAt: Long? = null,
+)
+
+/** Thrown by [FlowRun.fail]; [state] names the step that gave up. */
+class FlowFailure(val state: String, message: String) : Exception(message)

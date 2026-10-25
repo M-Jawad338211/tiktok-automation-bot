@@ -2,6 +2,10 @@
 
 Personal Android 15 automation app. Flow 1 posts OnePublish drafts in TikTok. Spec: [docs/](docs/).
 
+TikTok does not push the OnePublish draft notification; it only appears in-app. So the bot checks on
+a timer (default every 30 min): TikTok → Inbox → System notifications → TikTok Platform filter →
+newest "Your content from OnePublish is ready" item not yet posted → Next → Post.
+
 ## Build and install
 
 ```sh
@@ -14,16 +18,10 @@ Or open this folder in Android Studio and press Run. Always install over ADB/Stu
 ## Useful ADB commands
 
 ```sh
-adb logcat -s PhoneBot                                   # bot log, incl. every TikTok notification's title/text
+adb logcat -s PhoneBot                                   # bot log
 adb shell am broadcast -a dev.malik.phonebot.DUMP        # dump the current TikTok screen tree
 adb pull /sdcard/Android/data/dev.malik.phonebot/files/dumps/
 adb push selectors.json /sdcard/Android/data/dev.malik.phonebot/files/selectors.json
-```
-
-Fake trigger for testing (posted by `com.android.shell`, so add that package to `trigger.packages` in selectors.json first):
-
-```sh
-adb shell cmd notification post -t "Your content from OnePublish is ready" test1 "Edit your video before sharing to TikTok"
 ```
 
 ## selectors.json
@@ -32,10 +30,7 @@ Optional; built-in defaults are used when absent.
 
 ```json
 {
-  "trigger": {
-    "packages": ["com.zhiliaoapp.musically", "com.ss.android.ugc.trill"],
-    "titleRegex": "^Your content from OnePublish is ready",
-    "textRegex": "^Edit your video before sharing"
-  }
+  "packages": ["com.zhiliaoapp.musically", "com.ss.android.ugc.trill"],
+  "itemRegex": "^Your content from OnePublish is ready"
 }
 ```

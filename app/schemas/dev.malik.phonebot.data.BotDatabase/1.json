@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "3ff11c9482c7426fdf9d846a0cb81bad",
+    "identityHash": "75a9875a2b31d279bf4bfaf5de84ff07",
     "entities": [
       {
         "tableName": "runs",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `flowId` TEXT NOT NULL, `notifKey` TEXT NOT NULL, `postTime` INTEGER NOT NULL, `triggeredAt` INTEGER NOT NULL, `outcome` TEXT NOT NULL, `reason` TEXT, `durationMs` INTEGER, `screenshotPath` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `flowId` TEXT NOT NULL, `trigger` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `outcome` TEXT NOT NULL, `reason` TEXT, `durationMs` INTEGER, `screenshotPath` TEXT, `itemAt` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
@@ -21,20 +21,14 @@
             "notNull": true
           },
           {
-            "fieldPath": "notifKey",
-            "columnName": "notifKey",
+            "fieldPath": "trigger",
+            "columnName": "trigger",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "postTime",
-            "columnName": "postTime",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "triggeredAt",
-            "columnName": "triggeredAt",
+            "fieldPath": "startedAt",
+            "columnName": "startedAt",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -58,6 +52,11 @@
             "fieldPath": "screenshotPath",
             "columnName": "screenshotPath",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "itemAt",
+            "columnName": "itemAt",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -65,19 +64,7 @@
           "columnNames": [
             "id"
           ]
-        },
-        "indices": [
-          {
-            "name": "index_runs_notifKey_postTime",
-            "unique": true,
-            "columnNames": [
-              "notifKey",
-              "postTime"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_runs_notifKey_postTime` ON `${TABLE_NAME}` (`notifKey`, `postTime`)"
-          }
-        ]
+        }
       },
       {
         "tableName": "steps",
@@ -153,7 +140,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3ff11c9482c7426fdf9d846a0cb81bad')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '75a9875a2b31d279bf4bfaf5de84ff07')"
     ]
   }
 }

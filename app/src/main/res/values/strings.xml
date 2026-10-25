@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PhoneBot</string>
-    <string name="listener_label">PhoneBot trigger</string>
     <string name="accessibility_label">PhoneBot</string>
     <string name="accessibility_description">Lets PhoneBot open your TikTok drafts and tap Next and Post for you. It only reads TikTok and the notification shade.</string>
     <string name="tile_label">TikTok autopost</string>

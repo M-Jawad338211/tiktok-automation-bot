@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -42,6 +43,9 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.malik.phonebot.app
 import dev.malik.phonebot.data.RunEntity
+import dev.malik.phonebot.data.RunTrigger
+import dev.malik.phonebot.data.SettingsRepo
+import dev.malik.phonebot.engine.Scheduler
 import dev.malik.phonebot.data.RunOutcome
 import dev.malik.phonebot.service.BotAccessibilityService
 import dev.malik.phonebot.service.BotTileService
@@ -68,11 +72,11 @@ fun MainScreen() {
         status = SetupStatus.read(context)
     }
 
-    fun open(intent: Intent, fallback: Intent? = null) {
+    fun open(intent: Intent) {
         try {
             context.startActivity(intent)
         } catch (e: ActivityNotFoundException) {
-            fallback?.let(context::startActivity)
+            Toast.makeText(context, "Settings screen not found", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -86,9 +90,6 @@ fun MainScreen() {
 
             item {
                 Section("Setup") {
-                    StatusRow("Notification access", status.notificationAccess) {
-                        open(SetupIntents.notificationAccess(context), SetupIntents.notificationAccessFallback())
-                    }
                     StatusRow("Accessibility service", status.accessibility) { open(SetupIntents.accessibility()) }
                     StatusRow("Bot notifications", status.postNotifications) {
                         notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -103,12 +104,34 @@ fun MainScreen() {
 
             item {
                 Section("Flows") {
-                    SwitchRow("TikTok draft autopost", "Taps Next and Post on OnePublish drafts", settings?.tiktokEnabled == true) { on ->
+                    SwitchRow("TikTok draft autopost", "Checks TikTok's inbox and posts the newest OnePublish draft", settings?.tiktokEnabled == true) { on ->
                         scope.launch {
                             context.app.settings.setTiktokEnabled(on)
+                            Scheduler.sync(context)
                             BotTileService.refresh(context)
                         }
                     }
+                    Text("Check every", style = MaterialTheme.typography.bodyLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SettingsRepo.INTERVAL_CHOICES.forEach { minutes ->
+                            FilterChip(
+                                selected = settings?.intervalMinutes == minutes,
+                                onClick = {
+                                    scope.launch {
+                                        context.app.settings.setIntervalMinutes(minutes)
+                                        Scheduler.sync(context, forceReschedule = true)
+                                    }
+                                },
+                                label = { Text(if (minutes < 60) "$minutes min" else "${minutes / 60} h") },
+                            )
+                        }
+                    }
+                    Text(
+                        settings?.nextCheckAt?.takeIf { it > 0 }?.let { "Next check: ${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(it))}" }
+                            ?: "No check scheduled",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     SwitchRow("Dry run", "Walks the flow but never taps Post", settings?.dryRun != false) { on ->
                         scope.launch { context.app.settings.setDryRun(on) }
                     }
@@ -117,6 +140,10 @@ fun MainScreen() {
 
             item {
                 Section("Debug") {
+                    OutlinedButton(onClick = {
+                        context.app.engine.check(RunTrigger.MANUAL)
+                        Toast.makeText(context, "Checking TikTok's inbox", Toast.LENGTH_SHORT).show()
+                    }) { Text("Run now") }
                     OutlinedButton(onClick = {
                         val service = BotAccessibilityService.instance
                         if (service == null) {
@@ -184,7 +211,9 @@ private fun RunRow(run: RunEntity) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(run.outcome.name, color = color, style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.size(8.dp))
-            Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(Date(run.triggeredAt)), style = MaterialTheme.typography.bodySmall)
+            Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(Date(run.startedAt)), style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.size(8.dp))
+            Text(run.trigger.name.lowercase(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         run.reason?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         HorizontalDivider(Modifier.padding(top = 8.dp))
