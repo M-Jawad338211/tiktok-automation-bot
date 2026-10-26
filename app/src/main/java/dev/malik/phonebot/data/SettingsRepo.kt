@@ -48,7 +48,7 @@ class SettingsRepo(context: Context) {
 
     companion object {
         const val DEFAULT_INTERVAL_MINUTES = 30
-        val INTERVAL_CHOICES = listOf(15, 30, 60, 120)
+        val INTERVAL_CHOICES = listOf(5, 15, 30, 60, 120)
 
         private val TIKTOK_ENABLED = booleanPreferencesKey("tiktok_enabled")
         private val DRY_RUN = booleanPreferencesKey("dry_run")
